@@ -1,0 +1,56 @@
+@Library('olympus') _
+
+olympus.namespace = "insights"
+olympus.productionBranch = "main"
+
+def String quayDockerRepo = "quay.dc.xing.com"
+def String serviceName = "metabase"
+def String buildDockerImage
+def String quayDockerImage
+
+pipeline {
+    agent {
+        label 'docker'
+    }
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+        timestamps()
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                withDockerScopedCredentials(olympus.dockerRegistries) {
+                    script {
+                        olympus.checkout(this)
+                        buildDockerImage = "${serviceName}:${olympus.gitCommit}"
+                        sh "docker build -t ${buildDockerImage} ."
+                    }
+                }
+            }
+        }
+
+
+        stage('Publish production'){
+            when {
+                expression {env.GIT_BRANCH == olympus.productionBranch}
+            }
+            steps {
+                withDockerScopedCredentials(olympus.dockerRegistries) {
+                    script {
+                        ansiColor('xterm') {
+                            quayDockerImage = "${quayDockerRepo}/${olympus.namespace}/${serviceName}"
+                            sh "docker build -t ${quayDockerImage}:production \
+                                             --build-arg git_commit_sha=${olympus.gitCommit} \
+                                             --build-arg git_branch=${olympus.gitBranch} \
+                                             --cache-from ${buildDockerImage} ."
+                            sh "docker push ${quayDockerImage}:production"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
