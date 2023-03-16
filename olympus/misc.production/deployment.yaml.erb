@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metabase-config
+  namespace: insights
+  labels:
+    deploymentName: metabase
+data:
+  APPLICATION_SPECIFIC: dummy-value
+
+# Make sure you clean up deleted resources if you're not using an oly-based pipeline
+# See https://olympus.xing.io/docs/tasks/workloads/enabling-pruning.html for more information.
+
+<%= partial "web",
+  name: "metabase-app",
+  logjam_name: "metabase",
+  command: ["/app/run_metabase.sh"],
+  args: [],
+  replicas:  3 ,
+  cpu: "300m",
+  memory: "2048Mi"
+%>
+<%= partial "service", name: "metabase-app" %>
+
+<% if dc == "ams1" %>
+# Note: Changing the schedule of an existing cronjob might cause it to start immediately.
+# This is due to a known bug: https://github.com/kubernetes/kubernetes/issues/63371.
+# So instead of changing an existing cronjob, better delete it via `kubectl` and create a new one.
+<%= partial "cron", name: "metabase-myjob-cron", schedule: "0 10 * * *", args: ["job", "date"], cpu: "1", memory: "512Mi" %>
+
+<% end %>

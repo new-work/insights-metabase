@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "<%= name %>"
+  namespace: insights
+  annotations:
+    com.xing.deployment-restart: enabled
+  labels:
+    deploymentName: metabase
+spec:
+  revisionHistoryLimit: 5
+  replicas: <%= replicas %>
+  selector:
+    matchLabels:
+      app: "<%= name %>"
+  template:
+    metadata:
+      labels:
+        app: "<%= name %>"
+      annotations:
+        com.xing.ci-deployment.timestamp: "<%= deployment_id %>"
+        com.xing.logjam.app.name: "<%= logjam_name %>"
+    spec:
+      terminationGracePeriodSeconds: 900
+      imagePullSecrets:
+      - name: quay-pull-secret
+      containers:
+      - name: "<%= name %>"
+        image: <%= "quay.dc.xing.com/insights/metabase:#{tag}" %>
+        args: <%= args %>
+        envFrom: <%= partial "envFrom" %>
+        <% if defined?(environment) && !environment.empty? %>
+        env: [<%= environment.map { |k,v| %Q({name: "#{k.to_s}", value: "#{v.to_s}"}) }.join(",") %>]
+        <% end %>
+        resources:
+          requests:
+            cpu: "<%= cpu %>"
+            memory: "<%= memory %>"
