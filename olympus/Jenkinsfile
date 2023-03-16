@@ -1,7 +1,7 @@
 @Library('olympus') _
 
 olympus.namespace = "insights"
-olympus.productionBranch = "olympify"
+olympus.productionBranch = "main"
 
 def String quayDockerRepo = "quay.dc.xing.com"
 def String serviceName = "metabase"
