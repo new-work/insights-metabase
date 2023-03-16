@@ -51,6 +51,18 @@ pipeline {
                 }
             }
         }
+        stage('Deploy'){
+            when {
+                expression {env.GIT_BRANCH == olympus.productionBranch}
+            }
+            steps {
+                script {
+                    olympus.withKubeConfigsFor(this, "production") {
+                        sh "oly app deploy --environment production --tag production"
+                    }
+                }
+            }
+        }
     }
 }
 
