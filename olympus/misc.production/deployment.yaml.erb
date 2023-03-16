@@ -17,9 +17,9 @@ data:
   logjam_name: "metabase",
   command: ["/app/run_metabase.sh"],
   args: [],
-  replicas:  3 ,
-  cpu: "300m",
-  memory: "2048Mi"
+  replicas:  2 ,
+  cpu: "150m",
+  memory: "1024Mi"
 %>
 <%= partial "service", name: "metabase-app" %>
 
