@@ -27,6 +27,5 @@ data:
 # Note: Changing the schedule of an existing cronjob might cause it to start immediately.
 # This is due to a known bug: https://github.com/kubernetes/kubernetes/issues/63371.
 # So instead of changing an existing cronjob, better delete it via `kubectl` and create a new one.
-<%= partial "cron", name: "metabase-myjob-cron", schedule: "0 10 * * *", args: ["job", "date"], cpu: "1", memory: "512Mi" %>
 
 <% end %>
