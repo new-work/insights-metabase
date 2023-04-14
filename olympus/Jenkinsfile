@@ -7,6 +7,7 @@ def String quayDockerRepo = "quay.dc.xing.com"
 def String serviceName = "metabase"
 def String buildDockerImage
 def String quayDockerImage
+def String gitCommit
 
 pipeline {
     agent {
@@ -24,7 +25,8 @@ pipeline {
                 withDockerScopedCredentials(olympus.dockerRegistries) {
                     script {
                         olympus.checkout(this)
-                        buildDockerImage = "${serviceName}:${olympus.gitCommit}"
+                        gitCommit = sh(returnStdout: true, script: 'git log -1 --pretty=%h').trim()
+                        buildDockerImage = "${serviceName}:${gitCommit}"
                         sh "docker build -t ${buildDockerImage} ."
                     }
                 }
@@ -41,11 +43,11 @@ pipeline {
                     script {
                         ansiColor('xterm') {
                             quayDockerImage = "${quayDockerRepo}/${olympus.namespace}/${serviceName}"
-                            sh "docker build -t ${quayDockerImage}:production \
-                                             --build-arg git_commit_sha=${olympus.gitCommit} \
+                            sh "docker build -t ${quayDockerImage}:${gitCommit} \
+                                             --build-arg git_commit_sha=${gitCommit} \
                                              --build-arg git_branch=${olympus.gitBranch} \
                                              --cache-from ${buildDockerImage} ."
-                            sh "docker push ${quayDockerImage}:production"
+                            sh "docker push ${quayDockerImage}:${gitCommit}"
                         }
                     }
                 }
@@ -58,7 +60,7 @@ pipeline {
             steps {
                 script {
                     olympus.withKubeConfigsFor(this, "production") {
-                        sh "oly app deploy --environment production --tag production"
+                        sh "oly app deploy --environment production --tag ${gitCommit}"
                     }
                 }
             }
